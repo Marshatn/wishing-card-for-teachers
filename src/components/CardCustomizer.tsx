@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TeacherCardData,
+  DEFAULT_CARD_DATA,
   PRESENT_THEMES,
   MESSAGE_PRESETS,
   FAREWELL_SONGS,
@@ -15,6 +16,8 @@ import {
   Music,
   Play,
   Square,
+  RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { triggerStarShower } from '../utils/confetti';
 import { audioEngine } from '../utils/audio';
@@ -35,8 +38,32 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
   const [formData, setFormData] = useState<TeacherCardData>(cardData);
   const [newSignature, setNewSignature] = useState('');
   const [previewingSongId, setPreviewingSongId] = useState<string | null>(null);
+  const [showSavedNotification, setShowSavedNotification] = useState(false);
+
+  // Initialize formData when drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(cardData);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // Real-time update handler: updates local state AND parent state (which writes to localStorage)
+  const handleFieldChange = <K extends keyof TeacherCardData>(
+    field: K,
+    value: TeacherCardData[K]
+  ) => {
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+    onUpdateCardData(updated);
+    triggerAutoSaveIndicator();
+  };
+
+  const triggerAutoSaveIndicator = () => {
+    setShowSavedNotification(true);
+    setTimeout(() => setShowSavedNotification(false), 2000);
+  };
 
   const handleSave = () => {
     if (previewingSongId) {
@@ -49,24 +76,38 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
     onClose();
   };
 
+  const handleClose = () => {
+    if (previewingSongId) {
+      audioEngine.stopFarewellSong();
+      setPreviewingSongId(null);
+    }
+    // Auto-save on close so user edits are NEVER lost
+    onUpdateCardData(formData);
+    onClose();
+  };
+
   const handlePresetSelect = (text: string) => {
-    setFormData((prev) => ({ ...prev, farewellMessage: text }));
+    handleFieldChange('farewellMessage', text);
   };
 
   const handleAddSig = () => {
     if (!newSignature.trim()) return;
-    setFormData((prev) => ({
-      ...prev,
-      studentSignatures: [...prev.studentSignatures, newSignature.trim()],
-    }));
+    const updatedSignatures = [...formData.studentSignatures, newSignature.trim()];
+    handleFieldChange('studentSignatures', updatedSignatures);
     setNewSignature('');
   };
 
   const handleRemoveSig = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      studentSignatures: prev.studentSignatures.filter((_, i) => i !== index),
-    }));
+    const updatedSignatures = formData.studentSignatures.filter((_, i) => i !== index);
+    handleFieldChange('studentSignatures', updatedSignatures);
+  };
+
+  const handleResetToDefaults = () => {
+    if (window.confirm('Reset this keepsake back to the original SJK (C) Chung Hwa Kota Belud defaults?')) {
+      setFormData(DEFAULT_CARD_DATA);
+      onUpdateCardData(DEFAULT_CARD_DATA);
+      audioEngine.playChime(659.25, 0, 0.2);
+    }
   };
 
   const handleToggleSongPreview = (songId: string) => {
@@ -83,7 +124,10 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 backdrop-blur-xs">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 backdrop-blur-xs"
+      onClick={handleClose}
+    >
       <div
         className="w-full max-w-lg h-full bg-stone-900 border-l border-stone-800 p-6 overflow-y-auto flex flex-col justify-between shadow-2xl animate-slide-left text-stone-100"
         onClick={(e) => e.stopPropagation()}
@@ -96,22 +140,27 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
                 <Palette className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white font-display">
-                  Personalize Farewell Keepsake
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white font-display">
+                    Personalize Keepsake
+                  </h3>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 transition-all ${
+                    showSavedNotification
+                      ? 'bg-emerald-400 text-stone-950 border-emerald-400 font-bold scale-105'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  }`}>
+                    <Check className="w-3 h-3" />
+                    {showSavedNotification ? 'Saved!' : 'Auto-saved'}
+                  </span>
+                </div>
                 <p className="text-xs text-stone-400">
                   Custom message, best farewell song, & 3D colors
                 </p>
               </div>
             </div>
             <button
-              onClick={() => {
-                if (previewingSongId) {
-                  audioEngine.stopFarewellSong();
-                }
-                onClose();
-              }}
-              className="p-2 rounded-xl bg-stone-800 text-stone-400 hover:text-white transition-colors"
+              onClick={handleClose}
+              className="p-2 rounded-xl bg-stone-800 text-stone-400 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -135,58 +184,63 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
                   <div
                     key={song.id}
                     onClick={() => {
-                      setFormData((prev) => ({ ...prev, selectedSongId: song.id }));
+                      handleFieldChange('selectedSongId', song.id);
                       audioEngine.playChime(784, 0, 0.2);
                     }}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                       isSelected
-                        ? 'border-amber-400 bg-amber-500/10 shadow-sm shadow-amber-500/10'
-                        : 'border-stone-800 bg-stone-800/40 hover:bg-stone-800/70 text-stone-300'
+                        ? 'bg-amber-500/15 border-amber-500/50 shadow-xs'
+                        : 'bg-stone-800/60 border-stone-700/60 hover:border-stone-600'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-white">{song.title}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/30">
+                        <p
+                          className={`text-xs font-bold truncate ${
+                            isSelected ? 'text-amber-300' : 'text-stone-200'
+                          }`}
+                        >
+                          {song.title}
+                        </p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-stone-700 text-stone-300">
                           {song.badge}
                         </span>
                       </div>
-                      <p className="text-xs text-stone-400 truncate mt-0.5">
-                        {song.artistDesc}
-                      </p>
-                      <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">
+                      <p className="text-[11px] text-stone-400 truncate mt-0.5">
                         {song.description}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Play Preview button */}
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleToggleSongPreview(song.id);
                         }}
-                        className={`p-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors ${
                           isPreviewing
-                            ? 'bg-amber-400 text-stone-950 font-bold shadow-md'
-                            : 'bg-stone-700/80 hover:bg-stone-700 text-stone-200'
+                            ? 'bg-amber-400 text-stone-950 font-bold'
+                            : 'bg-stone-700 hover:bg-stone-600 text-stone-200'
                         }`}
-                        title={isPreviewing ? 'Stop Preview' : 'Play Audio Preview'}
+                        title={isPreviewing ? 'Stop Preview' : 'Listen to Preview'}
                       >
                         {isPreviewing ? (
-                          <>
-                            <Square className="w-3.5 h-3.5 fill-stone-950" />
-                            <span className="text-[11px]">Stop</span>
-                          </>
+                          <Square className="w-3 h-3 fill-current" />
                         ) : (
-                          <>
-                            <Play className="w-3.5 h-3.5 fill-current" />
-                            <span className="text-[11px]">Preview</span>
-                          </>
+                          <Play className="w-3 h-3 fill-current" />
                         )}
+                        <span className="text-[10px]">
+                          {isPreviewing ? 'Playing' : 'Listen'}
+                        </span>
                       </button>
 
-                      {isSelected && <Check className="w-4 h-4 text-amber-400" />}
+                      {isSelected && (
+                        <div className="w-5 h-5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -194,48 +248,64 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
             </div>
           </div>
 
-          {/* 3D Present Box Theme Selector */}
+          {/* Theme Selector */}
           <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
-              <Palette className="w-3.5 h-3.5 text-amber-400" />
-              Present Box Colors & Ribbon Finish
+            <label className="text-xs font-bold uppercase tracking-wider text-stone-400">
+              Present Box & Card Theme
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {PRESENT_THEMES.map((th) => {
-                const isSelected = formData.themeId === th.id;
+            <div className="grid grid-cols-2 gap-2.5">
+              {PRESENT_THEMES.map((theme) => {
+                const isSelected = formData.themeId === theme.id;
                 return (
                   <button
-                    key={th.id}
+                    key={theme.id}
                     type="button"
                     onClick={() => {
-                      setFormData((prev) => ({ ...prev, themeId: th.id }));
-                      audioEngine.playChime(659.25, 0, 0.2);
+                      handleFieldChange('themeId', theme.id);
+                      audioEngine.playChime(659.25, 0, 0.15);
                     }}
-                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
                       isSelected
-                        ? 'border-amber-400 bg-amber-500/10 shadow-sm'
-                        : 'border-stone-800 bg-stone-800/40 hover:bg-stone-800 text-stone-300'
+                        ? 'bg-stone-800 border-amber-400 ring-1 ring-amber-400 shadow-xs'
+                        : 'bg-stone-800/60 border-stone-700/60 hover:border-stone-600'
                     }`}
                   >
-                    <div className="flex -space-x-1 shrink-0">
+                    <div
+                      className="w-8 h-8 rounded-lg shadow-inner flex items-center justify-center border border-white/20 shrink-0"
+                      style={{ backgroundColor: theme.boxColorCss }}
+                    >
                       <div
-                        className="w-5 h-5 rounded-full border border-black/40 shadow-xs"
-                        style={{ backgroundColor: th.boxColorCss }}
-                      />
-                      <div
-                        className="w-5 h-5 rounded-full border border-black/40 shadow-xs"
-                        style={{ backgroundColor: th.ribbonColorCss }}
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: theme.accentHex }}
                       />
                     </div>
-                    <span className="text-xs font-medium truncate flex-1">{th.name}</span>
-                    {isSelected && <Check className="w-4 h-4 text-amber-400 shrink-0" />}
+                    <div className="truncate">
+                      <p className="text-xs font-semibold text-white truncate">
+                        {theme.name}
+                      </p>
+                    </div>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Teacher Recipient Name */}
+          {/* Recipient Title / Greeting */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Greeting / Title (Card Top Badge)
+            </label>
+            <input
+              type="text"
+              value={formData.recipientTitle}
+              onChange={(e) => handleFieldChange('recipientTitle', e.target.value)}
+              placeholder="e.g. Honoring Our Dear Teacher, 致最敬爱的老师"
+              className="w-full px-4 py-2.5 bg-stone-800/90 border border-stone-700 rounded-xl text-white text-sm focus:outline-hidden focus:border-amber-400 font-medium"
+            />
+          </div>
+
+          {/* Teacher Name Input */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
               <User className="w-3.5 h-3.5 text-amber-400" />
@@ -244,45 +314,28 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
             <input
               type="text"
               value={formData.teacherName}
-              onChange={(e) => setFormData({ ...formData, teacherName: e.target.value })}
-              placeholder="e.g. Mrs. Anderson or Mr. Davis"
+              onChange={(e) => handleFieldChange('teacherName', e.target.value)}
+              placeholder="e.g. Mrs. Anderson, Mr. Robert"
               className="w-full px-4 py-2.5 bg-stone-800/90 border border-stone-700 rounded-xl text-white text-sm focus:outline-hidden focus:border-amber-400"
             />
           </div>
 
-          {/* Teacher Honorific Subtitle */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-400">
-              Card Recipient Honorific / Subtitle
-            </label>
-            <input
-              type="text"
-              value={formData.recipientTitle}
-              onChange={(e) => setFormData({ ...formData, recipientTitle: e.target.value })}
-              placeholder="e.g. To Our Beloved Mentor & Teacher"
-              className="w-full px-4 py-2 bg-stone-800/90 border border-stone-700 rounded-xl text-white text-sm focus:outline-hidden focus:border-amber-400"
-            />
-          </div>
-
-          {/* Farewell Message with Quick Presets */}
+          {/* Farewell Message Textarea & Presets */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
                 <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                Heartfelt Farewell Message
+                Farewell Message
               </label>
-            </div>
-
-            {/* Presets */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] text-stone-400">Quick farewell templates:</span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex gap-1.5">
+                <span className="text-[11px] text-stone-400">Presets:</span>
                 {MESSAGE_PRESETS.map((preset, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => handlePresetSelect(preset.text)}
-                    className="px-2.5 py-1 text-[11px] bg-stone-800 hover:bg-stone-700 border border-stone-700 rounded-lg text-stone-300 transition-colors"
+                    className="text-[10px] px-2 py-0.5 bg-stone-800 hover:bg-stone-700 text-amber-300 rounded-md transition-colors cursor-pointer"
+                    title={preset.subtitle}
                   >
                     {preset.title.split(' ')[0]}
                   </button>
@@ -293,8 +346,22 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
             <textarea
               rows={4}
               value={formData.farewellMessage}
-              onChange={(e) => setFormData({ ...formData, farewellMessage: e.target.value })}
+              onChange={(e) => handleFieldChange('farewellMessage', e.target.value)}
               className="w-full px-4 py-2.5 bg-stone-800/90 border border-stone-700 rounded-xl text-white text-sm focus:outline-hidden focus:border-amber-400 leading-relaxed"
+            />
+          </div>
+
+          {/* Sign-Off Line */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-stone-400">
+              Sign-Off Greeting
+            </label>
+            <input
+              type="text"
+              value={formData.signOff}
+              onChange={(e) => handleFieldChange('signOff', e.target.value)}
+              placeholder="e.g. With deepest gratitude and endless love,"
+              className="w-full px-4 py-2.5 bg-stone-800/90 border border-stone-700 rounded-xl text-white text-sm focus:outline-hidden focus:border-amber-400"
             />
           </div>
 
@@ -302,13 +369,13 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-stone-400 flex items-center gap-2">
               <Users className="w-3.5 h-3.5 text-amber-400" />
-              Class / Sender Group
+              School / Sender Group
             </label>
             <input
               type="text"
               value={formData.senderGroup}
-              onChange={(e) => setFormData({ ...formData, senderGroup: e.target.value })}
-              placeholder="e.g. Forever Your Students — Class of 2026 🎓"
+              onChange={(e) => handleFieldChange('senderGroup', e.target.value)}
+              placeholder="e.g. SJK (C) Chung Hwa Kota Belud 🎓"
               className="w-full px-4 py-2.5 bg-stone-800/90 border border-stone-700 rounded-xl text-white text-sm focus:outline-hidden focus:border-amber-400"
             />
           </div>
@@ -323,13 +390,13 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
               {formData.studentSignatures.map((sig, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-800 rounded-lg text-xs text-stone-200 border border-stone-700"
+                  className="px-2.5 py-1 bg-stone-800 text-stone-200 text-xs rounded-lg flex items-center gap-1.5 border border-stone-700"
                 >
                   <span>{sig}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveSig(idx)}
-                    className="text-stone-400 hover:text-rose-400 ml-1"
+                    className="text-stone-400 hover:text-rose-400 ml-1 cursor-pointer"
                   >
                     ×
                   </button>
@@ -348,13 +415,13 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
                     handleAddSig();
                   }
                 }}
-                placeholder="Add signature (e.g. Liam 🎓 or Grade 10)"
+                placeholder="Add signature (e.g. Liam 🎓 or Grade 6)"
                 className="flex-1 px-3 py-1.5 bg-stone-800 border border-stone-700 rounded-lg text-xs text-white focus:outline-hidden focus:border-amber-400"
               />
               <button
                 type="button"
                 onClick={handleAddSig}
-                className="px-3 py-1.5 bg-stone-700 hover:bg-stone-600 rounded-lg text-xs font-medium text-white transition-colors"
+                className="px-3 py-1.5 bg-stone-700 hover:bg-stone-600 rounded-lg text-xs font-medium text-white transition-colors cursor-pointer"
               >
                 Add
               </button>
@@ -363,26 +430,34 @@ export const CardCustomizer: React.FC<CardCustomizerProps> = ({
         </div>
 
         {/* Footer save buttons */}
-        <div className="pt-6 border-t border-stone-800 flex items-center justify-end gap-3 mt-6">
+        <div className="pt-6 border-t border-stone-800 flex items-center justify-between gap-3 mt-6">
           <button
             type="button"
-            onClick={() => {
-              if (previewingSongId) {
-                audioEngine.stopFarewellSong();
-              }
-              onClose();
-            }}
-            className="px-4 py-2 text-xs font-medium text-stone-400 hover:text-white transition-colors"
+            onClick={handleResetToDefaults}
+            className="text-stone-500 hover:text-stone-300 text-xs flex items-center gap-1 transition-colors cursor-pointer"
+            title="Reset back to default SJK (C) Chung Hwa template"
           >
-            Cancel
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset Defaults</span>
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-amber-500/20"
-          >
-            Save & Update Present
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="px-4 py-2 text-xs font-medium text-stone-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-stone-950 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-amber-400/20 flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Apply & Celebrate</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

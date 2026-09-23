@@ -56,7 +56,9 @@ export const CalendarSchedulerModal: React.FC<CalendarSchedulerModalProps> = ({
   const [eventDate, setEventDate] = useState(getDefaultDate());
   const [startTime, setStartTime] = useState('14:00');
   const [endTime, setEndTime] = useState('15:30');
-  const [location, setLocation] = useState('School Main Auditorium / Classroom 4B');
+  const [location, setLocation] = useState(
+    'SJK (C) Chung Hwa Kota Belud — School Main Hall'
+  );
   const [notes, setNotes] = useState(
     `Honoring ${cardData.teacherName}'s inspirational years of teaching with speeches, gift box unboxing, card signing, and tea!\n\nMessage from students:\n"${cardData.farewellMessage}"\n\n${cardData.senderGroup}`
   );

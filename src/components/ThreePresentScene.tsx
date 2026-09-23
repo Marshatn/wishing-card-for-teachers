@@ -8,6 +8,7 @@ interface ThreePresentSceneProps {
   onToggleOpen: () => void;
   theme: PresentTheme;
   teacherName: string;
+  schoolName?: string;
   onBoxClick?: () => void;
   autoRotate?: boolean;
 }
@@ -30,6 +31,7 @@ export const ThreePresentScene: React.FC<ThreePresentSceneProps> = ({
   onToggleOpen,
   theme,
   teacherName,
+  schoolName = 'SJK (C) Chung Hwa Kota Belud',
   onBoxClick,
   autoRotate = true,
 }) => {
@@ -65,7 +67,7 @@ export const ThreePresentScene: React.FC<ThreePresentSceneProps> = ({
   }, [isOpen]);
 
   // Generate dynamic 2D canvas texture for the 3D greeting card
-  const createCardTexture = (name: string, accentHex: string) => {
+  const createCardTexture = (name: string, accentHex: string, school?: string) => {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 768;
@@ -149,10 +151,11 @@ export const ThreePresentScene: React.FC<ThreePresentSceneProps> = ({
     ctx.font = '34px system-ui, sans-serif';
     ctx.fillText('⭐ ⭐ ⭐ ⭐ ⭐', 512, 608);
 
-    // Bottom class credit
+    // Bottom school & sender credit: SJK (C) Chung Hwa Kota Belud
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('Forever in Our Hearts · Class of 2026 🎓', 512, 665);
+    ctx.font = '700 23px "Plus Jakarta Sans", sans-serif';
+    const displaySchool = school || 'SJK (C) Chung Hwa Kota Belud 🎓';
+    ctx.fillText(displaySchool, 512, 665);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -160,10 +163,10 @@ export const ThreePresentScene: React.FC<ThreePresentSceneProps> = ({
     return texture;
   };
 
-  // Update card texture when teacher name or theme changes
+  // Update card texture when teacher name, theme, or school changes
   useEffect(() => {
     if (cardMeshRef.current) {
-      const newTexture = createCardTexture(teacherName, theme.accentHex);
+      const newTexture = createCardTexture(teacherName, theme.accentHex, schoolName);
       if (Array.isArray(cardMeshRef.current.material)) {
         (cardMeshRef.current.material[4] as THREE.MeshStandardMaterial).map = newTexture;
         (cardMeshRef.current.material[4] as THREE.MeshStandardMaterial).needsUpdate = true;
@@ -172,7 +175,7 @@ export const ThreePresentScene: React.FC<ThreePresentSceneProps> = ({
         (cardMeshRef.current.material as THREE.MeshStandardMaterial).needsUpdate = true;
       }
     }
-  }, [teacherName, theme]);
+  }, [teacherName, theme, schoolName]);
 
   // Main Three.js Scene Setup
   useEffect(() => {
@@ -386,7 +389,7 @@ export const ThreePresentScene: React.FC<ThreePresentSceneProps> = ({
     const cardThickness = 0.04;
     const cardGeo = new THREE.BoxGeometry(cardWidth, cardHeight, cardThickness);
 
-    const cardFrontTex = createCardTexture(teacherName, theme.accentHex);
+    const cardFrontTex = createCardTexture(teacherName, theme.accentHex, schoolName);
     const cardSideMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 });
     const cardBackMat = new THREE.MeshStandardMaterial({
       color: 0xfffbeb,

@@ -130,55 +130,92 @@ export interface TeacherCardData {
   mainHeading: string; // "Farewell & Thank You, Teacher!"
   farewellMessage: string;
   signOff: string;
-  senderGroup: string; // e.g., "Forever Your Students — Class of 2026 🎓"
+  senderGroup: string; // e.g., "SJK (C) Chung Hwa Kota Belud 🎓"
   studentSignatures: string[];
   themeId: string;
   selectedSongId: string;
   farewellType: string; // 'General Farewell' | 'Retirement' | 'New Journey' | 'Graduation Farewell'
 }
 
-export const DEFAULT_CARD_DATA: TeacherCardData = {
-  recipientTitle: 'To Our Beloved Mentor & Teacher',
-  teacherName: 'Mrs. Anderson',
+export const XCC5305_BESTWISHES_CARD: TeacherCardData = {
+  recipientTitle: 'To Our Beloved Teachers',
+  teacherName: 'Mr Eric Chung & Ms Eily Gracesee',
   mainHeading: 'Farewell & Thank You, Teacher!',
   farewellMessage:
-    'A truly great teacher is impossible to forget. Thank you for igniting our curiosity, believing in us when we doubted ourselves, and filling our classroom with wisdom, warmth, and laughter. Though your journey takes you to new horizons, your inspiring lessons and kindness will forever live in our hearts. Wishing you endless joy, fulfillment, and happiness in your next chapter!',
-  signOff: 'With deepest gratitude and endless love,',
-  senderGroup: 'Forever Your Students — Class of 2026 🎓',
+    'A truly great teacher is impossible to forget —\nespecially one who can turn chaos into learning\nand Monday blues into “Okay lah, can survive.”\n\nMay your new school bless you with students who bring their books,\ncolleagues who don’t permanently “borrow” your pen,\na snack corner that never runs out,\nmeetings that end before your coffee gets cold,\nand WiFi strong enough for YouTube.\n\nWe’ll miss your jokes, teamwork,\nand those teacher superpowers that fix everything\neven when nothing is working.\n\nGo shine in your new school —\nbut don’t forget us… we still need someone\nto complain about WiFi problems with.',
+  signOff: 'With deepest gratitude ',
+  senderGroup: 'SJK (C) Chung Hwa Kota Belud 🎓',
   studentSignatures: [
-    'Emma 💐',
-    'Lucas 🍎',
-    'Sophia 📚',
-    'Maya ✨',
-    'Noah 🕊️',
-    'Aria 🌟',
-    'Oliver 🏆',
-    'Chloe 🎓',
+    'Amos',
+    'Alve',
+    'Brian',
+    'Chia',
+    'Evolyn',
+    'Mui Len',
+    'Delan',
+    'Dorin',
+    'Eudora',
+    'Fanny',
+    'Fenny',
+    'Fiona',
+    'Jackryson',
+    'Fedora',
+    'Jackson',
+    'Jacqueline',
+    'Jamuel',
+    'Jennifer',
+    'Joyce',
+    'Chen Ching',
+    'Masnika',
+    'Mell',
+    'Khai',
+    'Yen',
+    'Ashikin',
+    'Azah',
+    'Kelvin',
+    'Patrick',
+    'Jessica',
+    'SIew Nah',
+    'Victorry',
+    'Fui Han',
+    'Mung Ping',
   ],
   themeId: 'emerald-gold',
   selectedSongId: 'auld-lang-syne',
-  farewellType: 'General Farewell',
+  farewellType: 'New Journey',
 };
+
+export const DEFAULT_CARD_DATA: TeacherCardData = XCC5305_BESTWISHES_CARD;
 
 export const MESSAGE_PRESETS: { title: string; subtitle: string; text: string }[] = [
   {
-    title: 'Heartfelt Legacy & Gratitude (Recommended)',
+    title: 'Mr Eric & Ms Eily Special (Kota Belud)',
+    subtitle: 'Witty, Warm & Heartfelt Farewell',
+    text:
+      'A truly great teacher is impossible to forget —\nespecially one who can turn chaos into learning\nand Monday blues into “Okay lah, can survive.”\n\nMay your new school bless you with students who bring their books,\ncolleagues who don’t permanently “borrow” your pen,\na snack corner that never runs out,\nmeetings that end before your coffee gets cold,\nand WiFi strong enough for YouTube.\n\nWe’ll miss your jokes, teamwork,\nand those teacher superpowers that fix everything\neven when nothing is working.\n\nGo shine in your new school —\nbut don’t forget us… we still need someone\nto complain about WiFi problems with.',
+  },
+  {
+    title: 'Heartfelt Legacy & Gratitude',
     subtitle: 'Classic Teacher Farewell',
-    text: 'A truly great teacher is impossible to forget. Thank you for igniting our curiosity, believing in us when we doubted ourselves, and filling our classroom with wisdom, warmth, and laughter. Though your journey takes you to new horizons, your inspiring lessons and kindness will forever live in our hearts. Wishing you endless joy, fulfillment, and happiness in your next chapter!',
+    text:
+      'A truly great teacher is impossible to forget. Thank you for igniting our curiosity, believing in us when we doubted ourselves, and filling our classroom with wisdom, warmth, and laughter. Though your journey takes you to new horizons, your inspiring lessons and kindness will forever live in our hearts. Wishing you endless joy, fulfillment, and happiness in your next chapter!',
   },
   {
     title: 'Happy Retirement Celebration',
     subtitle: 'Celebrating Years of Dedication',
-    text: 'Congratulations on a legendary career! You have touched countless lives, nurtured generations of dreamers, and left an indelible mark on our school. May your retirement be filled with peaceful mornings, cherished adventures, and all the relaxation you so richly deserve!',
+    text:
+      'Congratulations on a legendary career! You have touched countless lives, nurtured generations of dreamers, and left an indelible mark on our school. May your retirement be filled with peaceful mornings, cherished adventures, and all the relaxation you so richly deserve!',
   },
   {
     title: 'New School / New Horizon Adventure',
     subtitle: 'Wishing Success on the Next Stop',
-    text: 'Our school won’t be the same without your bright smile and endless patience, but your next students are the luckiest in the world! Thank you for being our anchor and our inspiration. We wish you soaring success and grand happiness in your new journey!',
+    text:
+      'Our school won’t be the same without your bright smile and endless patience, but your next students are the luckiest in the world! Thank you for being our anchor and our inspiration. We wish you soaring success and grand happiness in your new journey!',
   },
   {
     title: 'Short, Poetic & Everlasting',
     subtitle: 'Timeless Farewell Sentiment',
-    text: '“A teacher affects eternity; they can never tell where their influence stops.” Thank you for guiding our minds and touching our hearts. Farewell, dear teacher—you will be deeply missed!',
+    text:
+      '“A teacher affects eternity; they can never tell where their influence stops.” Thank you for guiding our minds and touching our hearts. Farewell, dear teacher—you will be deeply missed!',
   },
 ];
