@@ -1,0 +1,6 @@
+{
+  "name": "3D Farewell Present Card - Farewell Teacher!",
+  "description": "An interactive 3D digital keepsake present card for a teacher's farewell, featuring bursting celebratory confetti, a pop-out 3D greeting card, the touching Auld Lang Syne farewell melody, customizable tributes, and Google Calendar event scheduling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
